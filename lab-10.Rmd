@@ -1,7 +1,7 @@
 ---
 title: "Lab 10 - Grading the professor, Pt. 2"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Zheqi"
+date: "3/6"
 output: github_document
 ---
 
@@ -11,17 +11,120 @@ output: github_document
 library(tidyverse) 
 library(tidymodels)
 library(openintro)
+
+library(broom)
+library(openintro)
+```
+```{r data}
+?evals
+evals <- openintro::evals
+
 ```
 
 ### Exercise 1
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r 1}
+ggplot(evals, aes(x=score)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")
+```
+
 
 ### Exercise 2
+```{r 2}
+evals %>% 
+  ggplot() + 
+  aes(x = bty_avg, y = score) + 
+  geom_point(color = 'blue') +
+  geom_smooth(method = 'lm')
+```
 
-...
+#Exercise 3
+```{r 3}
+evals %>% 
+  ggplot() + 
+  aes(x = bty_avg, y = score) + 
+  geom_jitter(color = 'blue') +
+  geom_smooth(method = 'lm')
 
-Add exercise headings as needed.
+#It adds a small amount of random variation to the location of each point, and is a useful way of handling overplotting caused by discreteness in smaller datasets.
+```
+
+#Exercise 4
+```{r 4}
+m_bty = lm(bty_avg ~ score, data = evals)
+```
+
+```{r 5}
+ggplot(evals,aes(bty_avg, score)) +
+  geom_point() +
+  geom_smooth(method='lm', se=FALSE) 
+```
+```{r 6}
+#higher scores are positively associated with better bty on average.
+
+```
+```{r 7}
+library(haven)
+mbty <- lm(bty_avg ~ score, data = evals)
+summary(mbty)
+#when average bty is less than 2, the score is 4. Does not make any sense.
+```
+
+
+```{r 8}
+#R-Square is .03502, every increase in bty_avg leads to an .52 increase in score. bty_avg significantly predicts the score.
+```
+```{r 9}
+m_gen <- lm(score ~ gender, data = evals)
+summary(m_gen)
+#the intercept does not have meanings. Males have .14 higher score than females.
+```
+
+```{r 10}
+# score=4.09282+.14151gendermale
+#male=4.23433. female=4.09282
+```
+```{r 11}
+
+E <- evals %>%
+  mutate(rank = relevel(rank, ref = "teaching"))
+m_rank = lm(score ~ rank, data = E)
+summary(m_rank)$coef
+#a little confused about the output. score=4.15462963 - .12961480 (tenure track) -.1451833(tenured)
+```
+```{r 12 13}
+S <- evals %>%
+  mutate(rank = relevel(rank, ref = "tenure track"))
+m_rank_relevel <- lm(score ~ rank, data = S)
+summary(m_rank_relevel)$coef
+#score=4.15462963 + .12961480 (teaching) -.01549919(tenured)
+```
+```{r 13}
+summary(m_rank_relevel)
+# R-squared=0.01163, non-significant
+```
+```{r 14}
+
+
+G<- evals %>%
+  mutate(tenure_eligible = case_when(
+                             rank == "teaching" ~ "No",
+                             rank %in% c("tenure track", "tenured") ~ "Yes"))
+
+
+```
+```{r 15}
+
+
+m_tenure_eligible = lm( score ~ tenure_eligible, data = G)
+summary(m_tenure_eligible)
+#score=4.2843-.1406 tenure_eligible(yes)
+#tenure eligible have .1406 lower scores comparatively to the teaching professors.
+#r-square is ,0115. significant.
+```
+
+
+
